@@ -82,15 +82,27 @@ int main(){
                     perror("msgsnd logout");
                     exit(1);
                 }
-                int indeksGry = znajdzGre(tabGier, wiadOdebrana.username);\
+                int indeksGry = znajdzGre(tabGier, wiadOdebrana.username);
                 if(indeksGry != -1){
                     wiadWyslana.mtype = 1;
                     strcpy(wiadWyslana.message, "Wygrales. Przeciwnik sie rozlaczyl");
-                    if(msgsnd(tabGier[liczbaGier].gracz2.kolejka, &wiadWyslana, sizeof(wiadWyslana) - sizeof(long), 0) == -1){
-                        perror("msgsnd logout i przegrana gra");
-                        exit(1);
+                    int indeks2;
+                    if(!strcmp(tabGier[indeksGry].gracz2.nick, wiadOdebrana.username)){
+                        indeks2 = znajdzIndeks(tabGraczy, tabGier[indeksGry].gracz1.nick);
+                        if(msgsnd(tabGier[indeksGry].gracz1.kolejka, &wiadWyslana, sizeof(wiadWyslana) - sizeof(long), 0) == -1){
+                            perror("msgsnd logout i przegrana gra");
+                            exit(1);
+                        }
+                    }
+                    else{
+                        indeks2 = znajdzIndeks(tabGraczy, tabGier[indeksGry].gracz2.nick);
+                        if(msgsnd(tabGier[indeksGry].gracz2.kolejka, &wiadWyslana, sizeof(wiadWyslana) - sizeof(long), 0) == -1){
+                            perror("msgsnd logout i przegrana gra");
+                            exit(1);
+                        }
                     }
 
+                    tabGraczy[indeks2].czy_gra = 0;
                     liczbaGier--;
                     tabGier[indeksGry].gracz1 = tabGier[liczbaGier].gracz1;
                     tabGier[indeksGry].gracz2 = tabGier[liczbaGier].gracz2;
@@ -110,13 +122,13 @@ int main(){
             if(!strcmp(polecenie, "help")){
                 wiadWyslana.mtype = 1;
                 strcpy(wiadWyslana.to, wiadOdebrana.username);
-                strcpy(wiadWyslana.message, "KOMENDA                    OPIS\nlogin [id_kolejki]          zalogowanie\n\nlogout         wylogowanie\nstart [nick_gracza]        nowa gra z graczem\nend [nick_gracza]        koniec gry z graczem");
+                strcpy(wiadWyslana.message, "KOMENDA                    OPIS\nlogin [id_kolejki]          zalogowanie\nlogout         wylogowanie\nstart [nick_gracza]        nowa gra z graczem\nend [nick_gracza]        koniec gry z graczem");
                 int indeks = znajdzIndeks(tabGraczy, wiadOdebrana.username);
                 if(msgsnd(tabGraczy[indeks].kolejka, &wiadWyslana, sizeof(wiadWyslana) - sizeof(long), 0) == -1){
                         perror("msgsnd help");
                         exit(1);
                 }
-                strcpy(wiadWyslana.message,"players                       wyswietl graczy\nhelp                        wyswietl dostepne komendy\n\n# [x] [y]             ruch na polu o wspolrzednych (x,y) zaczynajac od (1,1)");
+                strcpy(wiadWyslana.message,"players                       wyswietl graczy\nhelp                        wyswietl dostepne komendy\n# [x] [y]             ruch na polu o wspolrzednych (x,y) zaczynajac od (1,1)");
                 if(msgsnd(tabGraczy[indeks].kolejka, &wiadWyslana, sizeof(wiadWyslana) - sizeof(long), 0) == -1){
                         perror("msgsnd help2");
                         exit(1);
@@ -129,12 +141,21 @@ int main(){
                 int indeks2 = znajdzIndeks(tabGraczy, polecenie);
                 wiadWyslana.mtype = 1;
                 strcpy(wiadWyslana.to, wiadOdebrana.username);
+                if(!strcmp(tabGraczy[indeks].nick, tabGraczy[indeks2].nick)){
+                    strcpy(wiadWyslana.message, "Nie mozesz grac z samym soba");
+                    if(msgsnd(tabGraczy[indeks].kolejka, &wiadWyslana, sizeof(wiadWyslana) - sizeof(long), 0) == -1){
+                        perror("msgsnd bledny gracz");
+                        exit(1);
+                    }
+                    continue;
+                }
                 if(indeks2 == -1){
                     strcpy(wiadWyslana.message, "Nie ma takiego gracza");
                     if(msgsnd(tabGraczy[indeks].kolejka, &wiadWyslana, sizeof(wiadWyslana) - sizeof(long), 0) == -1){
                         perror("msgsnd bledny gracz");
                         exit(1);
                     }
+                    continue;
                 }
                 if(tabGraczy[indeks].czy_gra == 1){
                     strcpy(wiadWyslana.message, "Juz grasz. Mozesz miec tylko 1 gre na raz");
@@ -142,6 +163,7 @@ int main(){
                         perror("msgsnd wielokrotna gra");
                         exit(1);
                     }
+                    continue;
                 }
                 if(tabGraczy[indeks2].czy_gra == 1){
                     strcpy(wiadWyslana.message, "Przeciwnik gra teraz. Sprobuj pozniej");
@@ -149,6 +171,7 @@ int main(){
                         perror("msgsnd przeciwnik zajety");
                         exit(1);
                     }
+                    continue;
                 }
 
                 tabGier[liczbaGier].gracz1 = tabGraczy[indeks];
@@ -157,6 +180,8 @@ int main(){
                     for(j=0; j<3; j++)
                         tabGier[liczbaGier].game[i][j] = 0;
                 tabGier[liczbaGier].czyjRuch = 1;
+                tabGraczy[indeks].czy_gra = 1;
+                tabGraczy[indeks2].czy_gra = 1;
 
                 wiadWyslana.mtype = 2;
                 for(i=0; i<3; i++)
@@ -180,7 +205,8 @@ int main(){
                 znajdz_polecenie(wiadOdebrana.data, polecenie);
                 int indeksGry = znajdzGre(tabGier, wiadOdebrana.username);
                 int indeks = znajdzIndeks(tabGraczy, wiadOdebrana.username);
-                int kolejka2 = tabGier[indeksGry].gracz2.kolejka;
+                int indeks2 = znajdzIndeks(tabGraczy, polecenie);
+                int kolejka2 = tabGraczy[indeks2].kolejka;
                 wiadWyslana.mtype = 1;
                 strcpy(wiadWyslana.to, wiadOdebrana.username);
                 if(tabGraczy[indeks].czy_gra == 0){
@@ -191,6 +217,8 @@ int main(){
                     }
                 }
 
+                tabGraczy[indeks].czy_gra = 0;
+                tabGraczy[indeks2].czy_gra = 0;
                 for(i=0; i<3; i++)
                     for(j=0; j<3; j++)
                         wiadWyslana.gameMatrix[i][j] = tabGier[indeksGry].game[i][j];
@@ -219,14 +247,32 @@ int main(){
             if(!strcmp(polecenie, "#")){
                 int indeksGry = znajdzGre(tabGier, wiadOdebrana.username);
                 int indeks = znajdzIndeks(tabGraczy, wiadOdebrana.username);
-                int kolejka2 = tabGier[indeksGry].gracz2.kolejka;
+                int kolejka2, indeks2;
+                if(tabGier[indeksGry].czyjRuch == 1){
+                    kolejka2 = tabGier[indeksGry].gracz2.kolejka;
+                    indeks2 = znajdzIndeks(tabGraczy, tabGier[indeksGry].gracz2.nick);
+                }
+                else{
+                    kolejka2 = tabGier[indeksGry].gracz1.kolejka;
+                    indeks2 = znajdzIndeks(tabGraczy, tabGier[indeksGry].gracz1.nick);
+                }
 
                 znajdz_polecenie(wiadOdebrana.data, polecenie);
                 int x = atoi(polecenie) - 1;
                 znajdz_polecenie(wiadOdebrana.data, polecenie);
                 int y = atoi(polecenie) - 1;
 
-                if(tabGier[indeksGry].czyjRuch == 1 && tabGier[indeksGry].gracz2 == tabGraczy[indeks] || tabGier[indeksGry].czyjRuch == 2 && tabGier[indeksGry].gracz1 == tabGraczy[indeks]){
+                if(tabGraczy[indeks].czy_gra == 0){
+                    wiadWyslana.mtype = 1;
+                    strcpy(wiadWyslana.message, "Nie prowadzisz zadnej gry");
+                    if(msgsnd(tabGraczy[indeks].kolejka, &wiadWyslana, sizeof(wiadWyslana) - sizeof(long), 0) == -1){
+                        perror("msgsnd brak gry");
+                        exit(1);
+                    }
+                    continue;
+                }
+
+                if((tabGier[indeksGry].czyjRuch == 1 && !strcmp(tabGier[indeksGry].gracz2.nick, tabGraczy[indeks].nick)) || (tabGier[indeksGry].czyjRuch == 2 && !strcmp(tabGier[indeksGry].gracz1.nick, tabGraczy[indeks].nick))){
                     wiadWyslana.mtype = 1;
                     strcpy(wiadWyslana.message, "Nie twoja kolej. Ruch przeciwnika");
                     if(msgsnd(tabGraczy[indeks].kolejka, &wiadWyslana, sizeof(wiadWyslana) - sizeof(long), 0) == -1){
@@ -236,7 +282,7 @@ int main(){
                     continue;
                 }
 
-                if( x>3 || x<1 || y<1 || y>3 || tabGier[indeksGry].game[x][y] != 0 || ){
+                if( x>2 || x<0 || y<0 || y>2 || tabGier[indeksGry].game[x][y] != 0 ){
                     wiadWyslana.mtype = 1;
                     strcpy(wiadWyslana.message, "Niedozwolony ruch");
                     if(msgsnd(tabGraczy[indeks].kolejka, &wiadWyslana, sizeof(wiadWyslana) - sizeof(long), 0) == -1){
@@ -246,8 +292,12 @@ int main(){
                     continue;
                 }
                 tabGier[indeksGry].game[x][y] = tabGier[indeksGry].czyjRuch;
+                for(i=0; i<3; i++)
+                    for(j=0; j<3; j++)
+                        wiadWyslana.gameMatrix[i][j] = tabGier[indeksGry].game[i][j];
 
                 if(czyWygrana(tabGier[indeksGry].game, tabGier[indeksGry].czyjRuch)){
+                    printf("wygrana\n");
                     wiadWyslana.mtype = 2;
                     strcpy(wiadWyslana.message, "Wygrales");
                     if(msgsnd(tabGraczy[indeks].kolejka, &wiadWyslana, sizeof(wiadWyslana) - sizeof(long), 0) == -1){
@@ -259,6 +309,9 @@ int main(){
                         perror("msgsnd przegrana");
                         exit(1);
                     }
+
+                    tabGraczy[indeks].czy_gra = 0;
+                    tabGraczy[indeks2].czy_gra = 0;
 
                     tabGier[indeksGry].czyjRuch = tabGier[indeksGry].czyjRuch + 1;
                     if(tabGier[indeksGry].czyjRuch == 3)
@@ -287,6 +340,9 @@ int main(){
                         exit(1);
                     }
 
+                    tabGraczy[indeks].czy_gra = 0;
+                    tabGraczy[indeks2].czy_gra = 0;
+
                     liczbaGier--;
                     tabGier[indeksGry].gracz1 = tabGier[liczbaGier].gracz1;
                     tabGier[indeksGry].gracz2 = tabGier[liczbaGier].gracz2;
@@ -302,7 +358,8 @@ int main(){
                 if(tabGier[indeksGry].czyjRuch == 3)
                     tabGier[indeksGry].czyjRuch = 1;
 
-                strcpy(wiadWyslana.message, "");
+                wiadWyslana.mtype = 2;
+                strcpy(wiadWyslana.message, " ");
                 if(msgsnd(kolejka2, &wiadWyslana, sizeof(wiadWyslana) - sizeof(long), 0) == -1){
                     perror("msgsnd ruch przeciwnika");
                     exit(1);
