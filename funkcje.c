@@ -131,4 +131,3 @@ int czyRemis(int gameMatrix[3][3]){
     return 1;
 }
 
-
