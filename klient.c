@@ -32,7 +32,7 @@ int main(){
           perror("msgsnd przesylanie numeru kolejki");
           exit(1);
        }
-       if(msgrcv(idklient, &wiadOdebrana, sizeof(wiadOdebrana) - sizeof(long), 3, 0) == -1){
+       if(msgrcv(idklient, &wiadOdebrana, sizeof(wiadOdebrana) - sizeof(long), -3, 0) == -1){
             perror("msgrcv wiadomosc powitalna");
             exit(1);
         }
@@ -72,12 +72,13 @@ int main(){
 
 
             if(wiadOdebrana.mtype == 2){
+                printf("%s\n", wiadOdebrana.message);
                 wyswietlStan(wiadOdebrana.gameMatrix);
             }
 
 
             if(wiadOdebrana.mtype == 3){
-                if(msgctl(idklienta, IPC_RMID, 0)){
+                if(msgctl(idklient, IPC_RMID, 0)){
                     perror("msgctl klient logout");
                     exit(1);
                 }
