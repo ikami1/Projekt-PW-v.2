@@ -9,53 +9,53 @@
 #include <sys/msg.h>
 #include <sys/sem.h>
 
-// maksymalna liczba u¿ytkowników
+// maksymalna liczba uï¿½ytkownikï¿½w
 #define MAX_PLAYERS 32
 
-// maksymalna d³ugoœæ nazwy u¿ytkownika
+// maksymalna dï¿½ugoï¿½ï¿½ nazwy uï¿½ytkownika
 #define MAX_NAME_LENGTH 32
 
-// maksymalna d³ugoœæ wiadomoœci
+// maksymalna dï¿½ugoï¿½ï¿½ wiadomoï¿½ci
 #define MAX_MESSAGE_LENGTH 1024
 
 
 /*
 # Wymiana danych
-Serwer tworzy kolejkê i wypisuje jej ID, ¿eby klient wiedzia³, gdzie siê pod³¹czyæ.
-Klient te¿ tworzy swoj¹ kolejkê i zaraz po otwarciu kolejki serwera wysy³a tam komendê login ze swoim queue_id.
-Po wylogowaniu klient nie wy³¹cza siê sam z siebie, ale czeka na wiadomoœæ po¿egnaln¹ (typu 3).
+Serwer tworzy kolejkï¿½ i wypisuje jej ID, ï¿½eby klient wiedziaï¿½, gdzie siï¿½ podï¿½ï¿½czyï¿½.
+Klient teï¿½ tworzy swojï¿½ kolejkï¿½ i zaraz po otwarciu kolejki serwera wysyï¿½a tam komendï¿½ login ze swoim queue_id.
+Po wylogowaniu klient nie wyï¿½ï¿½cza siï¿½sam z siebie, ale czeka na wiadomoï¿½ï¿½ poï¿½egnalnï¿½ (typu 3).
 
-Komunikacja klient -> serwer przez kolejkê serwera, struktura command
-Komunikacja serwer -> klient przez kolejkê klienta, struktura message
+Komunikacja klient -> serwer przez kolejkï¿½ serwera, struktura command
+Komunikacja serwer -> klient przez kolejkï¿½ klienta, struktura message
 
 
 # Lista komend
 
 KOMENDA                 MTYPE   OPIS                        UWAGI
-login [id_kolejki]      2       zalogowanie                 to powinna byæ pierwsza komenda wysy³ana po pod³¹czeniu klienta
-logout                  1       wylogowanie                 trzeba odpowiedzieæ wiadomoœci¹ o mtype = 3, ¿eby wy³¹czyæ klienta
-start [gracz]           1       zacznij grê z graczem
-end [gracz]             1       zakoñcz grê z graczem       jeœli gracz chce siê poddaæ
-players                 1       wyœwietl graczy
-help                    1       wyœwietl dostêpne komendy
-# [x] [y]               1       ruch w grze danego gracza   ruch na pole x y    liczmy od 1. czyli kolumy 1,2,3. Warto je ponumerowaæ przy wyœwietlaniu
+login [id_kolejki]      2       zalogowanie                 to powinna byï¿½ pierwsza komenda wysyï¿½ana po podï¿½ï¿½czeniu klienta
+logout                  1       wylogowanie                 trzeba odpowiedzieï¿½ wiadomoï¿½ciï¿½ o mtype = 3, ï¿½eby wyï¿½ï¿½czyï¿½ klienta
+start [gracz]           1       zacznij grï¿½ z graczem
+end [gracz]             1       zakoï¿½cz grï¿½ z graczem       jeï¿½li gracz chce siï¿½ poddaï¿½
+players                 1       wyï¿½wietl graczy
+help                    1       wyï¿½wietl dostï¿½pne komendy
+# [x] [y]               1       ruch w grze danego gracza   ruch na pole x y    liczmy od 1. czyli kolumy 1,2,3. Warto je ponumerowaï¿½ przy wyï¿½wietlaniu
 */
 
 
-// struktura komend wysy³anych przez klienta na serwer
-// (wys³anie wiadomoœci te¿ rozumiemy jako komendê)
+// struktura komend wysyï¿½anych przez klienta na serwer
+// (wysï¿½anie wiadomoï¿½ci teï¿½ rozumiemy jako komendï¿½)
 struct command {
-    long mtype; // zale¿nie od typu komendy, opisane wy¿ej
-    char data[MAX_MESSAGE_LENGTH]; // treœæ komendy
-    char username[MAX_NAME_LENGTH]; // nazwa u¿ytkownika wysy³aj¹cego komendê
+    long mtype; // zaleï¿½nie od typu komendy, opisane wyï¿½ej
+    char data[MAX_MESSAGE_LENGTH]; // treï¿½ï¿½ komendy
+    char username[MAX_NAME_LENGTH]; // nazwa uï¿½ytkownika wysyï¿½ajï¿½cego komendï¿½
 };
 
-// struktura wiadomoœci wysy³anych od serwera do klienta
+// struktura wiadomoï¿½ci wysyï¿½anych od serwera do klienta
 struct message {
-    long mtype;                         //3-wylogowanie,2-ruch/plansza,1-wiadomoœæ(help, players itp.)
-    int gameMatrix[3][3];               //macierz stanu gry wysy³ana przez server
-    char to[MAX_NAME_LENGTH];           // nazwa u¿ytkownika/kana³u albo puste, jeœli to_symbol = *
-    char message[MAX_MESSAGE_LENGTH];   // treœæ wiadomoœci
+    long mtype;                         //3-wylogowanie,2-ruch/plansza,1-wiadomoï¿½ï¿½(help, players itp.)
+    int gameMatrix[3][3];               //macierz stanu gry wysyï¿½ana przez server
+    char to[MAX_NAME_LENGTH];           // nazwa uï¿½ytkownika/kanaï¿½u albo puste, jeï¿½li to_symbol = *
+    char message[MAX_MESSAGE_LENGTH];   // treï¿½ï¿½ wiadomoï¿½ci
 };
 
 #endif //IPCCHAT_IPCCHAT_H
